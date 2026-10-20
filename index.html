@@ -126,7 +126,7 @@ input.k[aria-invalid="true"]{border-color:#ff6a5a;box-shadow:0 0 0 3px rgba(255,
 var $=function(id){return document.getElementById(id);};
 var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
 var pulse=0;
-
+ 
 /* ---------- Black hole (WebGL) ---------- */
 var FS=`precision highp float;
 uniform vec2 R;uniform float T;uniform vec2 M;uniform float P;
@@ -226,7 +226,7 @@ if(!gl){noGL();}else{
     }
   }
 }
-
+ 
 /* ---------- Eclipsyne cipher (fixed values, A to Z) ---------- */
 var N="17 04 22 11 25 02 19 08 14 23 06 16 09 01 20 12 26 07 18 03 15 24 10 05 21 13".split(" ");
 var S="ve^mi xa^ky ri^ri ve^ve ri^el xa^ri ve^za xa^th ve^ky ri^no xa^su ve^su xa^za xa^ve ri^xa ve^ri ri^su xa^mi ve^th xa^no ve^el ri^ky ve^xa xa^el ri^ve ve^no".split(" ");
@@ -238,7 +238,7 @@ DW.forEach(function(w,i){W2D[w]=String(i);});
 P[":"]="./";P["?"]="../";P["!"]="..\\";
 Object.keys(P).forEach(function(k){PD[P[k]]=k;});
 var n2w=function(x){return x.split("").map(function(d){return DW[+d];}).join(" ");};
-
+ 
 function enc(text,fmt){
   return text.trim().split(/\s+/).filter(Boolean).map(function(word){
     var g=Array.from(word).map(function(ch){
@@ -293,7 +293,7 @@ function dec(code){
   }
   return cap(out);
 }
-
+ 
 /* ---------- UI ---------- */
 var inp=$("inp"),out=$("out"),mode="enc",result="",anim=0,busy=false;
 var fmt=function(){return document.querySelector("input[name=fmt]:checked").value;};
@@ -348,11 +348,11 @@ var h="";
 LET.split("").forEach(function(c){h+='<div class="cell"><b>'+c+'</b> '+L2N[c]+'<br>'+L2S[c]+'</div>';});
 DW.forEach(function(w,i){h+='<div class="cell"><b>'+i+'</b> '+w+'</div>';});
 $("ref").innerHTML=h;
-
+ 
 /* ---------- Access gate (the key only unlocks the page, it never changes the codes) ---------- */
 function hs(s){var x=2166136261;for(var i=0;i<s.length;i++){x^=s.charCodeAt(i);x=Math.imul(x,16777619);}return x>>>0;}
 var KH=4256394586;
-
+ 
 /* ---------- Sound (off by default) ---------- */
 var AC=null,drone=null,soundOn=false;
 function snd(on){
@@ -378,7 +378,7 @@ function whoosh(up){
     o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+1.6);
   }catch(e){}
 }
-
+ 
 /* ---------- Falling letters FX ---------- */
 var fx=$("fx"),fc=fx.getContext("2d");
 function fxSize(){var k=window.devicePixelRatio||1;fx.width=innerWidth*k;fx.height=innerHeight*k;fc.setTransform(k,0,0,k,0,0);}
@@ -433,7 +433,7 @@ function animate(src,res,done){
     requestAnimationFrame(step);
   })(performance.now());
 }
-
+ 
 /* ---------- Actions ---------- */
 function deny(){
   var kr=document.querySelector(".keyrow");
@@ -455,7 +455,7 @@ inp.addEventListener("keydown",function(e){if((e.ctrlKey||e.metaKey)&&e.key==="E
 $("key").addEventListener("input",function(){this.removeAttribute("aria-invalid");update();});
 $("eye").onclick=function(){var kk=$("key"),s=kk.type==="password";kk.type=s?"text":"password";this.textContent=s?"Hide":"Show";};
 $("snd").onclick=function(){snd(!soundOn);};
-
+ 
 /* ---------- Background music ---------- */
 var VID="-YUYLbjl7Sk",yt=null,ytReady=false,ytTried=false,aud=null,musOn=false,vol=40;
 function msg(t){$("mmsg").textContent=t;}
