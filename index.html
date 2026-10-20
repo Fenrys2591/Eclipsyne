@@ -67,6 +67,10 @@ input.k[aria-invalid="true"]{border-color:#ff6a5a;box-shadow:0 0 0 3px rgba(255,
 <body>
 <canvas id="bh" aria-hidden="true"></canvas>
 <canvas id="fx" aria-hidden="true"></canvas>
+<div id="dock">
+<button class="btn" id="mus" type="button">Music</button>
+<button class="btn" id="snd" type="button" aria-pressed="false">Sound off</button>
+</div>
 <div id="mp" hidden>
 <div id="ytbox"><div id="yt"></div></div>
 <div class="mrow">
@@ -95,7 +99,7 @@ input.k[aria-invalid="true"]{border-color:#ff6a5a;box-shadow:0 0 0 3px rgba(255,
 <label class="chip"><input type="radio" name="fmt" value="syl"><span>Syllables</span></label>
 </div>
 </div>
-<label class="lbl" for="key">Secret key (required)</label>
+<label class="lbl" for="key">Access key (required)</label>
 <div class="keyrow">
 <input class="k" id="key" type="password" placeholder="Enter the key" required autocomplete="off" spellcheck="false">
 <button class="btn" id="eye" type="button">Show</button>
@@ -110,7 +114,7 @@ input.k[aria-invalid="true"]{border-color:#ff6a5a;box-shadow:0 0 0 3px rgba(255,
 <button class="btn" id="swap">⇄ Use as input</button>
 <button class="btn" id="clear">Clear</button>
 </div>
-<p class="note">Decrypting detects the format on its own. Unknown characters becomes ||| (or ??? in Nyxaris words, where ||| separates words). Punctuation: ./ is “:”, ../ is “?”, ..\ is “!”. Every letter is shifted by the secret key, so the key is needed to encrypt or decrypt. Ctrl+Enter also sends. Move your pointer to tilt the disk, click the void for a ripple.</p>
+<p class="note">Every letter always has the same code (A = 17, B = 04, … Z = 13), so you can translate by hand with the reference table, without this page. Decrypting detects the format on its own. Unknown characters become ||| (or ??? in Nyxaris words, where ||| separates words). Punctuation: ./ is “:”, ../ is “?”, ..\ is “!”. The access key only unlocks this page, it does not change the codes. Ctrl+Enter also sends. Move your pointer to tilt the disk, click the void for a ripple.</p>
 </section>
 <details>
 <summary>Alphabet &amp; digits reference</summary>
@@ -223,8 +227,8 @@ if(!gl){noGL();}else{
   }
 }
 
-/* ---------- Eclipsyne cipher ---------- */
-var N="06 16 09 01 20 12 26 07 18 03 15 24 10 05 21 13 17 04 22 11 25 02 19 08 14 23".split(" ");
+/* ---------- Eclipsyne cipher (fixed values, A to Z) ---------- */
+var N="17 04 22 11 25 02 19 08 14 23 06 16 09 01 20 12 26 07 18 03 15 24 10 05 21 13".split(" ");
 var S="ve^mi xa^ky ri^ri ve^ve ri^el xa^ri ve^za xa^th ve^ky ri^no xa^su ve^su xa^za xa^ve ri^xa ve^ri ri^su xa^mi ve^th xa^no ve^el ri^ky ve^xa xa^el ri^ve ve^no".split(" ");
 var LET="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 var DW="qen vyr sha xel mor ith zun kae dru fen".split(" ");
@@ -258,7 +262,9 @@ function cap(s){
 }
 function dec(code){
   var t=code.toLowerCase().split(/\s+/).filter(Boolean),out="";
-  if(t.some(function(x){return W2D[x]!==undefined;})){
+  var coded=t.some(function(x){return S2L[x]||(/^\d+$/.test(x)&&N2L[+x]);});
+  var wordy=!coded&&t.some(function(x){return W2D[x]!==undefined;});
+  if(wordy){
     var g=[];
     var fl=function(){
       if(!g.length){return;}
@@ -281,6 +287,7 @@ function dec(code){
       else if(PD[x]){out+=PD[x];}
       else if(/^\d+$/.test(x)&&N2L[+x]){out+=N2L[+x];}
       else if(S2L[x]){out+=S2L[x];}
+      else if(W2D[x]!==undefined){out+=W2D[x];}
       else{out+="|||";}
     });
   }
@@ -288,7 +295,7 @@ function dec(code){
 }
 
 /* ---------- UI ---------- */
-var inp=$("inp"),out=$("out"),mode="enc",result="",anim=0;
+var inp=$("inp"),out=$("out"),mode="enc",result="",anim=0,busy=false;
 var fmt=function(){return document.querySelector("input[name=fmt]:checked").value;};
 function show(text){
   cancelAnimationFrame(anim);
@@ -342,20 +349,9 @@ LET.split("").forEach(function(c){h+='<div class="cell"><b>'+c+'</b> '+L2N[c]+'<
 DW.forEach(function(w,i){h+='<div class="cell"><b>'+i+'</b> '+w+'</div>';});
 $("ref").innerHTML=h;
 
-/* ---------- Secret key layer (keyed letter/digit shifts) ---------- */
+/* ---------- Access gate (the key only unlocks the page, it never changes the codes) ---------- */
 function hs(s){var x=2166136261;for(var i=0;i<s.length;i++){x^=s.charCodeAt(i);x=Math.imul(x,16777619);}return x>>>0;}
-function mb(a){return function(){a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return(t^t>>>14)>>>0;};}
-function keyed(text,key,dir){
-  if(!key){return text;}
-  var ks=mb(hs(key)),o="";
-  for(var ch of text){
-    var b=ch.normalize("NFD")[0].toUpperCase(),i=LET.indexOf(b);
-    if(b.length===1&&i>-1){o+=LET[(i+dir*(ks()%26)+26)%26];}
-    else if(/[0-9]/.test(ch)){o+=String((+ch+dir*(ks()%10)+10)%10);}
-    else{o+=ch;}
-  }
-  return o;
-}
+var KH=4256394586;
 
 /* ---------- Sound (off by default) ---------- */
 var AC=null,drone=null,soundOn=false;
@@ -439,7 +435,6 @@ function animate(src,res,done){
 }
 
 /* ---------- Actions ---------- */
-var busy=false,KH=4256394586;
 function deny(){
   var kr=document.querySelector(".keyrow");
   result="";show("");
@@ -451,7 +446,7 @@ function go(){
   if(busy||!inp.value.trim()){return;}
   var k=$("key").value.trim(),v=inp.value;
   if(hs(k)!==KH){deny();return;}
-  var r=mode==="enc"?enc(keyed(v,k,1),fmt()):cap(keyed(dec(v),k,-1));
+  var r=mode==="enc"?enc(v,fmt()):dec(v);
   busy=true;$("go").disabled=true;inp.readOnly=true;
   animate(v,r,function(){busy=false;$("go").disabled=false;inp.readOnly=false;result=r;show(r);});
 }
