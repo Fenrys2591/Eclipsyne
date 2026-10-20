@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Eclipsyne v3 · Event Horizon</title>
+<title>Eclipsyne v4 · Event Horizon</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 --ink:#f3e9df;--muted:#a79484;--amber:#ff9a3c;--amber2:#ffcf8a;--line:rgba(255,170,90,.22);--glass:rgba(9,6,12,.66);--field:rgba(0,0,0,.45);color-scheme:dark}
@@ -86,7 +86,7 @@ input.k[aria-invalid="true"]{border-color:#ff6a5a;box-shadow:0 0 0 3px rgba(255,
 <main>
 <header>
 <h1>ECLIPSYNE</h1>
-<p>Beyond the event horizon · v3 · fixed table (E = 25)</p>
+<p>Beyond the event horizon · v4 · fixed table (E = 25)</p>
 </header>
 <section class="card">
 <div class="seg" role="tablist">
@@ -116,8 +116,9 @@ input.k[aria-invalid="true"]{border-color:#ff6a5a;box-shadow:0 0 0 3px rgba(255,
 <button class="btn" id="copy">Copy</button>
 <button class="btn" id="swap">⇄ Use as input</button>
 <button class="btn" id="clear">Clear</button>
+<button class="btn" id="save">Save .txt</button>
 </div>
-<p class="note">Every letter always has the same code (A = 17, B = 04, … Z = 13), so you can translate by hand with the reference table, without this page. Decrypting detects the format on its own. Unknown characters become ||| (or ??? in Nyxaris words, where ||| separates words). Punctuation: ./ is “:”, ../ is “?”, ..\ is “!”. The access key only unlocks this page, it does not change the codes. Ctrl+Enter also sends. Move your pointer to tilt the disk, click the void for a ripple.</p>
+<p class="note">Every letter always has the same code (A = 17, B = 04, … Z = 13), so you can translate by hand with the reference table, without this page. Decrypting detects the format on its own. Unknown characters become ||| (or ??? in Nyxaris words, where ||| separates words). Punctuation: ./ is “:”, ../ is “?”, ..\ is “!”. The access key only unlocks this page, it does not change the codes. Ctrl+Enter also sends. In the reference, click a letter to add it to your sentence. Move your pointer to tilt the disk, click the void for a ripple.</p>
 </section>
 <details>
 <summary>Alphabet &amp; digits reference</summary>
@@ -324,8 +325,8 @@ function looksCoded(v){
   if(t.length<2){return false;}
   for(var i=0;i<t.length;i++){
     var x=t[i];
-    if(S2L[x]||(/^\d+$/.test(x)&&N2L[+x])){hits++;}
-    else if(!(x==="/"||x==="|||"||PD[x])){return false;}
+    if(S2L[x]||W2D[x]!==undefined||(/^\d+$/.test(x)&&N2L[+x])){hits++;}
+    else if(!(x==="/"||x==="|||"||x==="???"||PD[x])){return false;}
   }
   return hits>=2;
 }
@@ -367,9 +368,11 @@ $("copy").onclick=function(){
   try{navigator.clipboard.writeText(result).then(done,fb);}catch(e){fb();}
 };
 var h="";
-LET.split("").forEach(function(c){h+='<div class="cell"><b>'+c+'</b> '+L2N[c]+'<br>'+L2S[c]+'</div>';});
+LET.split("").forEach(function(c){h+='<div class="cell" data-c="'+c+'" style="cursor:pointer"><b>'+c+'</b> '+L2N[c]+'<br>'+L2S[c]+'</div>';});
 DW.forEach(function(w,i){h+='<div class="cell"><b>'+i+'</b> '+w+'</div>';});
 $("ref").innerHTML=h;
+$("ref").onclick=function(e){var c=e.target.closest("[data-c]");if(!c||mode!=="enc"){return;}inp.value+=c.dataset.c;update();};
+$("save").onclick=function(){if(!result){return;}var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([result],{type:"text/plain"}));a.download="eclipsyne.txt";document.body.appendChild(a);a.click();a.remove();};
 
 /* ---------- Access gate (the key only unlocks the page, it never changes the codes) ---------- */
 function hs(s){var x=2166136261;for(var i=0;i<s.length;i++){x^=s.charCodeAt(i);x=Math.imul(x,16777619);}return x>>>0;}
@@ -481,6 +484,8 @@ $("snd").onclick=function(){snd(!soundOn);};
 /* ---------- Background music ---------- */
 var VID="-YUYLbjl7Sk",yt=null,ytReady=false,ytTried=false,aud=null,musOn=false,vol=40;
 function msg(t){$("mmsg").textContent=t;}
+var minDone=false;
+function tuck(){if(minDone){return;}minDone=true;setTimeout(function(){$("mp").classList.add("min");},1800);}
 function musLabel(){$("mus").textContent=musOn?"Music on":"Music";}
 function ytFail(t){
   musOn=false;musLabel();
@@ -496,7 +501,7 @@ function ytInit(){
         events:{
           onReady:function(e){ytReady=true;e.target.setVolume(vol);e.target.playVideo();},
           onError:function(){ytFail();},
-          onStateChange:function(e){if(e.data===1){msg("");}}
+          onStateChange:function(e){if(e.data===1){msg("");tuck();}}
         }});
     }catch(err){ytFail();}
   };
@@ -508,6 +513,7 @@ function ytInit(){
 }
 function setMus(on){
   musOn=on;musLabel();
+  try{localStorage.setItem("eclMus",on?"on":"off");}catch(e){}
   if(aud){if(on){aud.play().catch(function(){});}else{aud.pause();}return;}
   if(!yt||!ytReady){return;}
   try{if(on){yt.playVideo();}else{yt.pauseVideo();}}catch(e){}
@@ -516,7 +522,7 @@ function useAudio(a,label){
   if(yt&&ytReady){try{yt.pauseVideo();}catch(e){}}
   if(aud){aud.pause();}
   aud=a;aud.loop=true;aud.volume=vol/100;
-  $("ytbox").style.display="none";msg(label);setMus(true);
+  $("ytbox").style.display="none";msg(label);setMus(true);tuck();
 }
 $("mus").onclick=function(){
   var mp=$("mp");
@@ -541,6 +547,12 @@ $("mpick").onchange=function(){
 };
 $("mhide").onclick=function(e){e.stopPropagation();$("mp").classList.add("min");};
 $("mp").addEventListener("click",function(){if(this.classList.contains("min")){this.classList.remove("min");}});
+window.addEventListener("pointerdown",function once(e){
+  window.removeEventListener("pointerdown",once);
+  if(e.target.closest("#dock,#mp")){return;}
+  var off=false;try{off=localStorage.getItem("eclMus")==="off";}catch(x){}
+  if(!off&&!musOn&&!ytTried&&!aud){$("mus").onclick();}
+});
 window.addEventListener("pointerdown",function(e){
   if(!e.target.closest(".card,details,button,textarea,input")){pulse=Math.min(1.2,pulse+.5);}
 });
